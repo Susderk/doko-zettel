@@ -16,7 +16,7 @@
   var esc = App.esc;
   App.nameOf = function (id) { return (S.pm[id] && S.pm[id].name) || 'Unbekannt'; };
   App.names = function (ev) { return ev.players.map(App.nameOf); };
-  App.dateStr = function (iso) { try { return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return ''; } };
+  App.dateStr = function (iso) { try { var d = new Date(iso); return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'; } catch (e) { return ''; } };
   App.isWriter = function () { return !!(S.ev && S.me && S.ev.writer === S.me); };
 
   App.toast = function (msg) {

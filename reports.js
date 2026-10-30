@@ -23,7 +23,7 @@
     ['Absagen (keine 90/60/30)', function (o) { return o.absagen; }]
   ];
 
-  function isoDate(iso) { try { return new Date(iso).toISOString().slice(0, 10); } catch (e) { return 'abend'; } }
+  function isoDate(iso) { try { var d = new Date(iso), z = function (x) { return String(x).padStart(2, '0'); }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()); } catch (e) { return 'abend'; } }
   function saveBlob(blob, name) {
     var url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = name; document.body.appendChild(a); a.click();
