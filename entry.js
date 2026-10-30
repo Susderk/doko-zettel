@@ -67,7 +67,7 @@
     });
     var v = Math.abs(r.netRe);
     if (r.mult === 2) h += '<div class="sumrow"><span>Bockspiel ×2</span><b>' + v + '</b></div>';
-    if (!r.solo && v > 0) h += '<div class="sumrow"><span>Nur Minuspunkte: Differenz (×2)</span><b>' + 2 * v + '</b></div>';
+    if (!r.solo && v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte</span><b>' + 2 * v + '</b></div>';
     if (r.solo && v > 0) h += '<div class="sumrow"><span>Solo: Differenz (×4)</span><b>' + 4 * v + '</b></div>';
     return h;
   }
