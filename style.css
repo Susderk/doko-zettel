@@ -157,3 +157,8 @@ dl{margin:0}
 table.stat.sum th,table.stat.sum td{padding:9px 5px}
 table.stat.sum td:first-child{white-space:normal;width:36%;max-width:130px;font-size:13px !important;line-height:1.2}
 table.stat.sum td.pay{font-weight:700;font-size:16px}
+/* Dekoration: Kartenfächer im Hintergrund */
+body::before{content:"";position:fixed;left:0;right:0;bottom:64px;height:min(62vh,520px);background:url(cards.svg) no-repeat center bottom/min(560px,125vw);opacity:.26;pointer-events:none;z-index:0}
+#app{position:relative;z-index:1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{opacity:.12}}
+@media print{body::before{display:none}}
