@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
   var ABS = ['', 'Keine 90', 'Keine 60', 'Keine 30', 'Schwarz'];
-  var TG = [120, 90, 60, 30], NEED = [151, 181, 211];
+  var TG = [90, 60, 30, 1], NEED = [151, 181, 211];
   var lvl = function (a) { return a >= 2 ? a - 1 : 0; };
   var blankEx = function () { return { R: { f: 0, d: 0, k: 0 }, K: { f: 0, d: 0, k: 0 } }; };
 
@@ -37,7 +37,10 @@
       if (oa < 30) lines.push([nm[O] + ' unter 30', 1]);
       if (oa === 0) lines.push([nm[O] + ' schwarz', 1]);
       if (win) for (var s = 1; s <= L[X]; s++) lines.push([ABS[s] + ' angesagt', 1]);
-      for (var t = 1; t <= L[O]; t++) if (aug[X] >= TG[t - 1]) lines.push([TG[t - 1] + ' Augen gegen „' + ABS[t] + '“', 1]);
+      for (var t = 1; t <= L[O]; t++) {
+        if (win) lines.push([nm[O] + ': ' + ABS[t] + ' angesagt', 1]);
+        if (aug[X] >= TG[t - 1]) lines.push([(t === 4 ? 'Nicht schwarz' : TG[t - 1] + ' Augen') + ' gegen „' + ABS[t] + '“', 1]);
+      }
       if (win) { if (ann.R) lines.push(['Re angesagt', 1]); if (ann.K) lines.push(['Kontra angesagt', 1]); }
       return lines;
     }
