@@ -48,7 +48,7 @@
     window.scrollTo(0, 0);
     var go = {
       home: viewHome, neu: viewSetup, spieler: viewPlayers, abend: function () { return viewEvening(h[1]); },
-      statistik: function () { return App.viewStats(); }, archiv: viewArchive, zusammenfassung: function () { return App.viewSummary(h[1]); }
+      statistik: function () { return App.viewStats(); }, archiv: viewArchive, regeln: function () { return App.viewRules(); }, zusammenfassung: function () { return App.viewSummary(h[1]); }
     }[S.route] || viewHome;
     setBusy();
     Promise.resolve().then(go).catch(function (e) { App.fail(e); $app.innerHTML = '<div class="note warn"><b>Keine Verbindung</b>Die Daten konnten nicht geladen werden.</div><button class="btn primary big" data-act="reload">Noch einmal laden</button>'; });
@@ -100,7 +100,7 @@
       '<h3 class="sec">Laufende Abende</h3>' +
       '<div class="list">' + (cards || '<p class="hint">Gerade läuft kein Abend. Starte unten einen neuen.</p>') + '</div>' +
       '<div class="menu"><button type="button" class="btn" data-act="goto" data-to="statistik">Statistik</button><button type="button" class="btn" data-act="goto" data-to="archiv">Abgeschlossene Abende</button>' +
-      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button></div></main>' +
+      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button><button type="button" class="btn" data-act="goto" data-to="regeln">Punkte-Regeln</button></div></main>' +
       '<div class="dock"><div class="dock-in"><button type="button" class="btn primary big" data-act="goto" data-to="neu">Neuer Abend</button></div></div>';
   }
 
@@ -145,6 +145,7 @@
       '<div class="seg" style="margin-top:10px"><button type="button" data-act="setPer" data-v="abend" aria-pressed="' + (st.period === 'abend') + '">pro Abend</button><button type="button" data-act="setPer" data-v="stunde" aria-pressed="' + (st.period === 'stunde') + '">pro Stunde</button><button type="button" data-act="setPer" data-v="runden" aria-pressed="' + (st.period === 'runden') + '">pro x Runden</button></div>' +
       (st.period === 'runden' ? '<div class="row" style="margin-top:10px"><button type="button" class="mini" data-act="evDec" aria-label="Weniger Runden">' + MINUS + '</button><b style="font:500 24px var(--font-num);min-width:2ch;text-align:center">' + st.every + '</b><button type="button" class="mini" data-act="evInc" aria-label="Mehr Runden">+</button><span class="grow">Runden (1 Runde = alle geben einmal)</span></div>' : '') +
       '<p class="hint">' + (st.period === 'abend' ? 'Jeder spielt sein Pflichtsolo einmal pro Abend.' : st.period === 'stunde' ? 'Pro volle Stunde Spielzeit schuldet jeder die eingestellte Anzahl Solos. Was am Ende fehlt, wird nach der letzten Runde nachgespielt.' : 'Pro ' + st.every + ' volle Runde(n) schuldet jeder die eingestellte Anzahl Solos. Was am Ende fehlt, wird nach der letzten Runde nachgespielt.') + '</p></div>' +
+      '<p class="hint">Die Punkte-Werte stehen unter „Punkte-Regeln“ im Menü. Sie werden beim Start festgehalten.</p>' +
       '<button type="button" class="btn primary big" data-act="startEv"' + (ok ? '' : ' disabled') + '>Abend starten</button></section></main>';
   }
 
@@ -201,7 +202,7 @@
       banner = '<div class="note warn"><b>Pflichtsolo: ' + esc(names[st.expected]) + ' muss spielen</b>Noch ohne Solo: ' + esc(st.owe.map(function (x) { return names[x]; }).join(', ')) + '.' +
         (st.forced ? ' ' + esc(names[st.expected]) + ' hat abgetreten und ist jetzt dran.' : (st.canCede ? ' ' + esc(names[st.expected]) + ' kann abtreten, muss dann aber im nächsten Spiel selbst spielen.' : '')) + '</div>';
     } else if (st.phase === 'fertig') banner = '<div class="note me"><b>Alle Pflichtsoli sind gespielt</b>Der Abend kann abgeschlossen werden.</div>';
-    if (st.bockNext && st.phase !== 'fertig') banner += '<div class="note"><b>Nächstes Spiel ist ein Bockspiel</b>Das letzte Spiel ergab 0 Punkte. Punkte ×2.</div>';
+    if (st.bockNext && st.phase !== 'fertig') banner += '<div class="note"><b>Nächstes Spiel ist ein Bockspiel</b>Das letzte Spiel ergab 0 Punkte. Punkte ×' + D.mergeRules(S.ev.rules).bock + '.</div>';
 
     var writer = ev.writer ? App.nameOf(ev.writer) : null, mine = App.isWriter();
     var wline = '<div class="note ' + (mine ? 'me' : '') + '"><b>' + (mine ? 'Du schreibst' : 'Schreiber: ' + esc(writer || 'niemand')) + '</b>' +
@@ -225,7 +226,7 @@
 
   /* ---------- Aktionen ---------- */
   function needMe(fn) { if (!S.me) { App.askMe(fn); return false; } return true; }
-  function evPatchThenRefresh(p) { return Data.updateEvening(S.ev.id, p).then(function (e) { S.ev = e; renderZettel(); }); }
+  function evPatchThenRefresh(p) { return Data.updateEvening(S.ev.id, p).then(function (e) { e.rules = S.ev.rules; S.ev = e; renderZettel(); }); }
 
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]');

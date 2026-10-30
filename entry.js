@@ -52,7 +52,7 @@
       '<section class="blk"><h3>Ansagen</h3><div class="two"><label class="fld"><span id="reALbl">Re-Partei</span><select id="reA">' + opts(REOPT) + '</select></label>' +
       '<label class="fld"><span>Kontra-Partei</span><select id="kA">' + opts(KOPT) + '</select></label></div></section>' +
       '<section class="blk" id="exSec"><h3>Sonderpunkte</h3><div class="exgrid"><span></span><span class="ch">Re</span><span class="ch">Kontra</span>' + ex + '</div><p class="hint">Gezählt wird für die Partei, die den Punkt macht.</p></section>' +
-      '<section class="blk"><label class="check"><input type="checkbox" id="bock"><span>Bockspiel: Punkte ×2</span></label></section>' +
+      '<section class="blk"><label class="check"><input type="checkbox" id="bock"><span id="bockLbl">Bockspiel</span></label></section>' +
       '<section class="blk"><h3>Rechenweg</h3><div class="ledger" id="ledger"></div></section></div>' +
       '<div class="foot"><div class="res" id="res"></div><button type="button" class="btn primary" id="saveBtn" data-act="fsave">Speichern</button></div></div>');
     sync();
@@ -66,13 +66,13 @@
       h += '<div class="sumrow"><span>Summe</span><b>' + gr.total + '</b></div></div>';
     });
     var v = Math.abs(r.netRe);
-    if (r.mult === 2) h += '<div class="sumrow"><span>Bockspiel ×2</span><b>' + v + '</b></div>';
-    if (!r.solo && v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte</span><b>' + 2 * v + '</b></div>';
-    if (r.solo && v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte</span><b>' + 4 * v + '</b></div>';
+    if (r.mult !== 1) h += '<div class="sumrow"><span>Bockspiel ×' + r.mult + '</span><b>' + v + '</b></div>';
+    if (!r.solo && v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte</span><b>' + r.factor * v + '</b></div>';
+    if (r.solo && v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte</span><b>' + r.factor * v + '</b></div>';
     return h;
   }
   function resultLine(r) {
-    var m = 0 - (r.solo ? 4 : 2) * Math.abs(r.netRe);
+    var m = 0 - r.factor * Math.abs(r.netRe);
     if (r.netRe === 0) return 'Unentschieden, keine Minuspunkte';
     if (r.solo) return r.netRe > 0 ? 'Jeder Gegner ' + App.fmt(m) + ' · Solist 0' : 'Solist ' + App.fmt(m) + ' · Gegner 0';
     return r.netRe > 0 ? 'Kontra ' + App.fmt(m) + ' je Spieler · Re 0' : 'Re ' + App.fmt(m) + ' je Spieler · Kontra 0';
@@ -98,6 +98,7 @@
     s.querySelector('#reTitle').textContent = solo ? 'Solist' : 'Re-Spieler (Kreuz-Damen)';
     s.querySelector('#reHint').textContent = solo ? 'Wer spielt das Solo?' : 'Wer hat die Kreuz-Damen? Gewählt: ' + d.re.length + ' von 2';
     s.querySelector('#reALbl').textContent = solo ? 'Solist' : 'Re-Partei';
+    s.querySelector('#bockLbl').textContent = 'Bockspiel: Punkte ×' + D.mergeRules(S.ev.rules).bock;
 
     var info = '';
     if (solo && d.re.length === 1 && st && !editRow) {
@@ -120,7 +121,7 @@
     s.querySelector('#bock').checked = !!d.bock;
 
     var valid = d.re.length === (solo ? 1 : 2) && d.re.every(function (i) { return act.indexOf(i) >= 0; });
-    var r = D.score(Object.assign({}, d), n);
+    var r = D.score(Object.assign({}, d), n, S.ev.rules);
     s.querySelector('#ledger').innerHTML = ledgerHTML(r);
     var tt = r.netRe === 0 ? 'Unentschieden' : (r.netRe > 0 ? (solo ? 'Solist gewinnt' : 'Re gewinnt') : (solo ? 'Gegner gewinnen' : 'Kontra gewinnt'));
     s.querySelector('#res').innerHTML = valid ? '<strong>' + tt + '</strong><span>' + resultLine(r) + '</span>' : '<strong>' + (solo ? 'Solist wählen' : 'Zwei Re-Spieler wählen') + '</strong><span>Dann kann das Spiel gespeichert werden.</span>';

@@ -3,6 +3,11 @@
   'use strict';
   var ABS = ['', 'Keine 90', 'Keine 60', 'Keine 30', 'Schwarz'];
   var TG = [90, 60, 30, 1], NEED = [151, 181, 211];
+  /* Punktwerte (Hausregeln). Jeder Wert ist je Abend einstellbar. */
+  var RULES = { won: 1, alten: 1, reAn: 1, kAn: 1, a90: 1, a60: 1, a30: 1, aS: 1, e90: 1, e60: 1, e30: 1, eS: 1,
+    u90: 1, u60: 1, u30: 1, sw: 1, fuchs: 1, dk: 1, karlchen: 1, normal: 2, solo: 4, bock: 2 };
+  var AKEY = ['a90', 'a60', 'a30', 'aS'], EKEY = ['e90', 'e60', 'e30', 'eS'];
+  function mergeRules(r) { return Object.assign({}, RULES, r || {}); }
   var lvl = function (a) { return a >= 2 ? a - 1 : 0; };
   var blankEx = function () { return { R: { f: 0, d: 0, k: 0 }, K: { f: 0, d: 0, k: 0 } }; };
 
@@ -14,8 +19,8 @@
 
   /* Wertung eines Spiels. Hausregeln: je Ansage 1 Punkt, nur Minuspunkte (Verlierer zahlen),
      Solo = Differenz (x4), Bock = x2. Sonderpunkte werden vorher gegeneinander verrechnet. */
-  function score(g, n) {
-    var solo = g.mode === 'solo';
+  function score(g, n, rules) {
+    var R_ = mergeRules(rules), solo = g.mode === 'solo';
     var aug = { R: g.reAug, K: 240 - g.reAug };
     var L = { R: lvl(g.reA), K: lvl(g.kA) };
     var ann = { R: g.reA >= 1, K: g.kA >= 1 };
@@ -31,17 +36,18 @@
     var nm = { R: solo ? 'Solist' : 'Re', K: solo ? 'Gegner' : 'Kontra' };
     function party(X, win) {
       var O = X === 'R' ? 'K' : 'R', lines = [], oa = aug[O];
-      if (win) { lines.push(['Gewonnen', 1]); if (X === 'K' && !solo) lines.push(['Gegen die Alten', 1]); }
-      if (oa < 90) lines.push([nm[O] + ' unter 90', 1]);
-      if (oa < 60) lines.push([nm[O] + ' unter 60', 1]);
-      if (oa < 30) lines.push([nm[O] + ' unter 30', 1]);
-      if (oa === 0) lines.push([nm[O] + ' schwarz', 1]);
-      if (win) for (var s = 1; s <= L[X]; s++) lines.push([ABS[s] + ' angesagt', 1]);
+      var add = function (label, v) { if (v > 0) lines.push([label, v]); };
+      if (win) { add('Gewonnen', R_.won); if (X === 'K' && !solo) add('Gegen die Alten', R_.alten); }
+      if (oa < 90) add(nm[O] + ' unter 90', R_.u90);
+      if (oa < 60) add(nm[O] + ' unter 60', R_.u60);
+      if (oa < 30) add(nm[O] + ' unter 30', R_.u30);
+      if (oa === 0) add(nm[O] + ' schwarz', R_.sw);
+      if (win) for (var s = 1; s <= L[X]; s++) add(ABS[s] + ' angesagt', R_[AKEY[s - 1]]);
       for (var t = 1; t <= L[O]; t++) {
-        if (win) lines.push([nm[O] + ': ' + ABS[t] + ' angesagt', 1]);
-        if (aug[X] >= TG[t - 1]) lines.push([(t === 4 ? 'Nicht schwarz' : TG[t - 1] + ' Augen') + ' gegen „' + ABS[t] + '“', 1]);
+        if (win) add(nm[O] + ': ' + ABS[t] + ' angesagt', R_[AKEY[t - 1]]);
+        if (aug[X] >= TG[t - 1]) add((t === 4 ? 'Nicht schwarz' : TG[t - 1] + ' Augen') + ' gegen „' + ABS[t] + '“', R_[EKEY[t - 1]]);
       }
-      if (win) { if (ann.R) lines.push(['Re angesagt', 1]); if (ann.K) lines.push(['Kontra angesagt', 1]); }
+      if (win) { if (ann.R) add('Re angesagt', R_.reAn); if (ann.K) add('Kontra angesagt', R_.kAn); }
       return lines;
     }
     var sum = function (a) { return a.reduce(function (t, x) { return t + x[1]; }, 0); };
@@ -59,24 +65,24 @@
     var ex = g.ex || blankEx();
     if (!solo) {
       var el = [];
-      [['f', 'Fuchs gefangen'], ['d', 'Doppelkopf'], ['k', 'Karlchen']].forEach(function (p) {
-        var r = ex.R[p[0]], q = ex.K[p[0]];
-        if (r) el.push(['Re: ' + p[1] + (r > 1 ? ' ×' + r : ''), r]);
-        if (q) el.push(['Kontra: ' + p[1] + (q > 1 ? ' ×' + q : ''), -q]);
+      [['f', 'Fuchs gefangen', R_.fuchs], ['d', 'Doppelkopf', R_.dk], ['k', 'Karlchen', R_.karlchen]].forEach(function (p) {
+        var r = ex.R[p[0]] * p[2], q = ex.K[p[0]] * p[2], rn = ex.R[p[0]], qn = ex.K[p[0]];
+        if (r) el.push(['Re: ' + p[1] + (rn > 1 ? ' ×' + rn : ''), r]);
+        if (q) el.push(['Kontra: ' + p[1] + (qn > 1 ? ' ×' + qn : ''), -q]);
         exR += r; exK += q;
       });
       if (el.length) groups.push({ title: 'Sonderpunkte (Re minus Kontra)', lines: el, total: exR - exK });
     }
-    var mult = g.bock ? 2 : 1;
+    var mult = g.bock ? R_.bock : 1;
     var raw = base + exR - exK;
     var netRe = raw * mult;
     var pp = []; for (var z = 0; z < n; z++) pp.push(0);
     var act = activeFor(n, g.dealer);
     var re = g.re || [], kon = act.filter(function (i) { return re.indexOf(i) < 0; });
-    var v = Math.abs(netRe), f = solo ? 4 : 2;
+    var v = Math.abs(netRe), f = solo ? R_.solo : R_.normal;
     if (netRe > 0) kon.forEach(function (i) { pp[i] = -f * v; });
     else if (netRe < 0) re.forEach(function (i) { pp[i] = -f * v; });
-    return { W: W, groups: groups, raw: raw, mult: mult, netRe: netRe, pp: pp, solo: solo };
+    return { W: W, groups: groups, raw: raw, mult: mult, factor: f, netRe: netRe, pp: pp, solo: solo };
   }
 
   /* Solo-Regel: count Solos je Einheit; Einheit = 'abend' | 'stunde' | 'runden' (alle `every` Runden).
@@ -111,7 +117,7 @@
       if (endNeed === null) need = needNow(i, timeOf(g));
       var d = g.dealer != null ? g.dealer : dealer;
       var g2 = Object.assign({}, g, { dealer: d });
-      var res = score(g2, n);
+      var res = score(g2, n, ev.rules);
       var solo = g.mode === 'solo', s = solo ? g.re[0] : -1;
       var pflicht = solo && soloCount[s] < need;
       rows.push({ nr: i + 1, game: g2, res: res, dealer: d, pflicht: pflicht, round: round, phaseBefore: phase });
@@ -197,6 +203,6 @@
     return '﻿' + lines.join('\r\n') + '\r\n';
   }
 
-  root.Doko = { score: score, replay: replay, nextDuty: nextDuty, summarize: summarize, toCSV: toCSV, activeFor: activeFor, blankEx: blankEx, ABS: ABS };
+  root.Doko = { score: score, RULES: RULES, mergeRules: mergeRules, replay: replay, nextDuty: nextDuty, summarize: summarize, toCSV: toCSV, activeFor: activeFor, blankEx: blankEx, ABS: ABS };
   if (typeof module !== 'undefined') module.exports = root.Doko;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -47,6 +47,19 @@
   }
   function byGame(a, b) { return a.nr - b.nr || (a.created < b.created ? -1 : 1); }
 
+  var CFG = 'cfg:';
+  function cfgRowId(evId) { return 'c' + evId; }
+  function parseRules(row) { try { var r = JSON.parse(row.data); return (r && typeof r === 'object') ? r : {}; } catch (e) { return {}; } }
+  function getRules(rowId) {
+    return tdb.getRow({ databaseId: C.db, tableId: 'spiele', rowId: rowId }).then(parseRules).catch(function () { return null; });
+  }
+  function putRules(rowId, abendId, rules) {
+    var data = { abendId: abendId, nr: 1, data: JSON.stringify(rules) };
+    return tdb.updateRow({ databaseId: C.db, tableId: 'spiele', rowId: rowId, data: { data: data.data } })
+      .catch(function () { return tdb.createRow({ databaseId: C.db, tableId: 'spiele', rowId: rowId, data: data }); });
+  }
+  function isCfg(r) { return (r.abendId || '').indexOf(CFG) === 0; }
+
   var Data = {
     userId: null,
     ready: function () {
@@ -71,12 +84,23 @@
 
     activeEvenings: function () { return listAll('abende', [Q.equal('status', ['aktiv'])]).then(function (rows) { return rows.map(evOf); }); },
     allEvenings: function () { return listAll('abende').then(function (rows) { return rows.map(evOf); }); },
-    evening: function (id) { return tdb.getRow({ databaseId: C.db, tableId: 'abende', rowId: id }).then(evOf); },
+    evening: function (id) {
+      return tdb.getRow({ databaseId: C.db, tableId: 'abende', rowId: id }).then(evOf).then(function (ev) {
+        return getRules(cfgRowId(id)).then(function (r) { ev.rules = r || {}; return ev; });
+      });
+    },
+    globalRules: function () { return getRules('cfgglobal').then(function (r) { return r || {}; }); },
+    saveGlobalRules: function (rules) { return putRules('cfgglobal', CFG + 'global', rules); },
     createEvening: function (o) {
       return tdb.createRow({
         databaseId: C.db, tableId: 'abende', rowId: ID.unique(),
         data: { status: 'aktiv', n: o.n, players: o.players, firstDealer: o.firstDealer, writer: o.writer || null, lastRound: false, lastRoundAt: 0, soloCount: o.soloCount == null ? 1 : o.soloCount, soloPeriod: ruleStr(o.rule || { period: 'abend' }) }
-      }).then(evOf);
+      }).then(evOf).then(function (ev) {
+        return Data.globalRules().then(function (g) {
+          ev.rules = g;
+          return putRules(cfgRowId(ev.id), CFG + ev.id, g).catch(function () { }).then(function () { return ev; });
+        });
+      });
     },
     updateEvening: function (id, patch) {
       var d = Object.assign({}, patch);
@@ -87,10 +111,20 @@
     deleteEvening: function (id) {
       return Data.games(id).then(function (gs) {
         return gs.reduce(function (p, g) { return p.then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'spiele', rowId: g.rowId }); }); }, Promise.resolve());
-      }).then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'abende', rowId: id }); });
+      }).then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'spiele', rowId: cfgRowId(id) }).catch(function () { }); })
+        .then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'abende', rowId: id }); });
     },
     games: function (eveningId) { return listAll('spiele', [Q.equal('abendId', [eveningId])]).then(function (rows) { return rows.map(gameOf).sort(byGame); }); },
-    allGames: function () { return listAll('spiele').then(function (rows) { return rows.map(gameOf).sort(byGame); }); },
+    allGames: function () { return listAll('spiele').then(function (rows) { return rows.filter(function (r) { return !isCfg(r); }).map(gameOf).sort(byGame); }); },
+    /* Statistik: Abende mit ihren Regeln und alle Spiele, ein Abruf */
+    statsData: function () {
+      return Promise.all([listAll('abende'), listAll('spiele')]).then(function (r) {
+        var rules = {}, games = [];
+        r[1].forEach(function (x) { if (isCfg(x)) rules[x.abendId.slice(CFG.length)] = parseRules(x); else games.push(gameOf(x)); });
+        var evs = r[0].map(evOf); evs.forEach(function (ev) { ev.rules = rules[ev.id] || {}; });
+        return { evenings: evs, games: games.sort(byGame) };
+      });
+    },
     addGame: function (eveningId, nr, g) {
       return tdb.createRow({ databaseId: C.db, tableId: 'spiele', rowId: ID.unique(), data: { abendId: eveningId, nr: nr, data: JSON.stringify(g) } }).then(gameOf);
     },
