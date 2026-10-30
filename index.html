@@ -1,5 +1,28 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Doko-Zettel</title>
-<style>body{font:18px system-ui,sans-serif;margin:0;display:grid;place-items:center;min-height:100vh;background:#f1f6f5;color:#14202a}main{padding:24px;text-align:center}h1{font-size:2rem;margin:0 0 8px}</style>
-</head><body><main><h1>Doko-Zettel</h1><p>Die App ist im Aufbau. Diese Seite zeigt, dass die Veröffentlichung funktioniert.</p></main></body></html>
+<meta name="theme-color" content="#f1f6f5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<style>[hidden]{display:none!important}</style>
+</head>
+<body>
+<div id="app"><p class="busy">Lade Doko-Zettel …</p></div>
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-label="Eingabe" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="lib/appwrite.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="engine.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="entry.js"></script>
+<script src="reports.js"></script>
+<script>App.start();</script>
+</body>
+</html>
