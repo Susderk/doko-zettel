@@ -122,7 +122,7 @@
   /* ---------- Neuer Abend ---------- */
   function viewSetup() {
     return loadProfiles().then(function () {
-      if (!S.setup) S.setup = { n: 4, picked: [], first: 0, count: 1 };
+      if (!S.setup) S.setup = { n: 4, picked: [], first: 0, count: 1, period: 'abend', every: 5 };
       renderSetup();
     });
   }
@@ -141,7 +141,10 @@
       '<p class="hint">Tippe die Spieler in der Reihenfolge an, in der sie am Tisch sitzen. Noch einmal tippen nimmt sie wieder heraus.</p>' +
       '<div class="row" style="margin-top:10px"><input type="text" id="quickName" maxlength="14" class="grow" autocomplete="off" placeholder="Neuer Spieler"><button type="button" class="btn small" data-act="quickAdd">Anlegen</button></div></div>' +
       '<div class="blk"><h3><label for="first">Erster Geber</label></h3><select id="first"' + (ok ? '' : ' disabled') + '>' + (opts || '<option>Zuerst Spieler wählen</option>') + '</select></div>' +
-      '<div class="blk"><h3>Pflichtsolo</h3><div class="row"><button type="button" class="mini" data-act="soloDec" aria-label="Weniger">' + MINUS + '</button><b style="font:500 24px var(--font-num);min-width:2ch;text-align:center">' + st.count + '</b><button type="button" class="mini" data-act="soloInc" aria-label="Mehr">+</button><span class="grow">Solo(s) pro Spieler und Abend</span></div></div>' +
+      '<div class="blk"><h3>Pflichtsolo</h3><div class="row"><button type="button" class="mini" data-act="soloDec" aria-label="Weniger">' + MINUS + '</button><b style="font:500 24px var(--font-num);min-width:2ch;text-align:center">' + st.count + '</b><button type="button" class="mini" data-act="soloInc" aria-label="Mehr">+</button><span class="grow">Solo(s) pro Spieler</span></div>' +
+      '<div class="seg" style="margin-top:10px"><button type="button" data-act="setPer" data-v="abend" aria-pressed="' + (st.period === 'abend') + '">pro Abend</button><button type="button" data-act="setPer" data-v="stunde" aria-pressed="' + (st.period === 'stunde') + '">pro Stunde</button><button type="button" data-act="setPer" data-v="runden" aria-pressed="' + (st.period === 'runden') + '">pro x Runden</button></div>' +
+      (st.period === 'runden' ? '<div class="row" style="margin-top:10px"><button type="button" class="mini" data-act="evDec" aria-label="Weniger Runden">' + MINUS + '</button><b style="font:500 24px var(--font-num);min-width:2ch;text-align:center">' + st.every + '</b><button type="button" class="mini" data-act="evInc" aria-label="Mehr Runden">+</button><span class="grow">Runden (1 Runde = alle geben einmal)</span></div>' : '') +
+      '<p class="hint">' + (st.period === 'abend' ? 'Jeder spielt sein Pflichtsolo einmal pro Abend.' : st.period === 'stunde' ? 'Pro volle Stunde Spielzeit schuldet jeder die eingestellte Anzahl Solos. Was am Ende fehlt, wird nach der letzten Runde nachgespielt.' : 'Pro ' + st.every + ' volle Runde(n) schuldet jeder die eingestellte Anzahl Solos. Was am Ende fehlt, wird nach der letzten Runde nachgespielt.') + '</p></div>' +
       '<button type="button" class="btn primary big" data-act="startEv"' + (ok ? '' : ' disabled') + '>Abend starten</button></section></main>';
   }
 
@@ -267,11 +270,14 @@
       Data.createProfile(q).then(function (pr) { S.profiles.push(pr); S.pm[pr.id] = pr; if (st.picked.length < st.n) st.picked.push(pr.id); renderSetup(); }).catch(App.fail);
     }
     else if (a === 'soloDec') { st.count = Math.max(0, st.count - 1); renderSetup(); }
+    else if (a === 'setPer') { st.period = t.dataset.v; renderSetup(); }
+    else if (a === 'evDec') { st.every = Math.max(1, st.every - 1); renderSetup(); }
+    else if (a === 'evInc') { st.every = Math.min(10, st.every + 1); renderSetup(); }
     else if (a === 'soloInc') { st.count = Math.min(3, st.count + 1); renderSetup(); }
     else if (a === 'startEv') {
       if (!needMe(function () { t.click(); })) return;
       t.disabled = true;
-      Data.createEvening({ n: st.n, players: st.picked, firstDealer: st.first, writer: S.me, soloCount: st.count })
+      Data.createEvening({ n: st.n, players: st.picked, firstDealer: st.first, writer: S.me, soloCount: st.count, rule: { period: st.period, every: st.every } })
         .then(function (ev) { S.setup = null; App.go('abend/' + ev.id); }).catch(function (er) { t.disabled = false; App.fail(er); });
     }
     else if (a === 'takeOver') {

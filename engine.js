@@ -76,18 +76,36 @@
     return { W: W, groups: groups, raw: raw, mult: mult, netRe: netRe, pp: pp, solo: solo };
   }
 
-  /* Abendablauf: Geber, Pflichtsolo, letzte Runde. ev = {n, firstDealer, lastRound, lastRoundAt, dutyNext, soloRule:{count}} */
-  function replay(ev, games) {
-    var n = ev.n, need = (ev.soloRule && ev.soloRule.count != null) ? ev.soloRule.count : 1;
+  /* Solo-Regel: count Solos je Einheit; Einheit = 'abend' | 'stunde' | 'runden' (alle `every` Runden).
+     Abgeschlossene Einheiten zum Zeitpunkt (Spielindex i, Zeit t): */
+  function completedUnits(ev, i, t) {
+    var r = ev.soloRule || {}, per = r.period || 'abend';
+    if (per === 'stunde') {
+      var st = Date.parse(ev.created); if (!isFinite(st) || !isFinite(t)) return 0;
+      return Math.max(0, Math.floor((t - st) / 3600000));
+    }
+    if (per === 'runden') return Math.floor(i / (ev.n * (r.every || 5)));
+    return 0;
+  }
+  /* Abendablauf: Geber, Pflichtsolo, letzte Runde. ev = {n, created, firstDealer, lastRound, lastRoundAt, dutyNext, soloRule:{count, period, every}} */
+  function replay(ev, games, now) {
+    var n = ev.n, per0 = (ev.soloRule && ev.soloRule.period) || 'abend';
+    var count = (ev.soloRule && ev.soloRule.count != null) ? ev.soloRule.count : 1;
     var first = ev.firstDealer || 0, lastAt = ev.lastRoundAt || 0;
     var soloCount = []; for (var q = 0; q < n; q++) soloCount.push(0);
     var dealer = first, round = 1, phase = 'normal', bockNext = false, rows = [];
+    var endNeed = null;
+    function timeOf(g) { var t = g && g.created ? Date.parse(g.created) : NaN; return t; }
+    /* Soll bis jetzt: laufende Einheit zählt mit (wer in der Einheit sein Solo spielt, erfüllt es als Pflichtsolo) */
+    function needNow(i, t) { return count * (per0 === 'abend' ? 1 : completedUnits(ev, i, t) + 1); }
+    var need = needNow(0, now != null ? now : Date.now());
     var oweList = function () {
       var o = [];
       for (var k = 0; k < n; k++) { var p = (first + k) % n; if (soloCount[p] < need) o.push(p); }
       return o;
     };
     games.forEach(function (g, i) {
+      if (endNeed === null) need = needNow(i, timeOf(g));
       var d = g.dealer != null ? g.dealer : dealer;
       var g2 = Object.assign({}, g, { dealer: d });
       var res = score(g2, n);
@@ -107,12 +125,16 @@
           var nd = (d + 1) % n;
           dealer = nd;
           if (nd === first) {
-            if (ev.lastRound && i >= lastAt) { dealer = first; phase = oweList().length ? 'pflicht' : 'fertig'; }
+            if (ev.lastRound && i >= lastAt) {
+              if (per0 !== 'abend') { endNeed = count * Math.max(1, completedUnits(ev, i + 1, timeOf(g))); need = endNeed; }
+              else endNeed = need;
+              dealer = first; phase = oweList().length ? 'pflicht' : 'fertig'; }
             else round++;
           }
         }
       }
     });
+    if (endNeed === null) need = needNow(games.length, now != null ? now : Date.now());
     if (phase === 'normal' && ev.lastRound) phase = 'letzte';
     var owe = oweList();
     var forced = phase === 'pflicht' && ev.dutyNext != null && ev.dutyNext >= 0 && owe.indexOf(ev.dutyNext) >= 0;

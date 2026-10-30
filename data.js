@@ -24,13 +24,18 @@
     return page(null);
   }
 
+  function parseRule(count, per) {
+    var m = /^runden:(\d+)$/.exec(per || '');
+    return { count: count == null ? 1 : count, period: m ? 'runden' : (per === 'stunde' ? 'stunde' : 'abend'), every: m ? +m[1] : 5 };
+  }
+  function ruleStr(r) { return r.period === 'runden' ? 'runden:' + r.every : (r.period === 'stunde' ? 'stunde' : 'abend'); }
   function evOf(r) {
     var d = r.dutyNext;
     return {
       id: r.$id, created: r.$createdAt, status: r.status || 'aktiv', n: r.n, players: r.players || [], firstDealer: r.firstDealer || 0,
       writer: r.writer || null, lastRound: !!r.lastRound, lastRoundAt: r.lastRoundAt || 0,
       dutyNext: (d === null || d === undefined || d === '') ? -1 : parseInt(d, 10),
-      soloRule: { count: r.soloCount == null ? 1 : r.soloCount, period: r.soloPeriod || 'abend' },
+      soloRule: parseRule(r.soloCount, r.soloPeriod),
       csvFileId: r.csvFileId || null, endedAt: r.endedAt || null
     };
   }
@@ -70,7 +75,7 @@
     createEvening: function (o) {
       return tdb.createRow({
         databaseId: C.db, tableId: 'abende', rowId: ID.unique(),
-        data: { status: 'aktiv', n: o.n, players: o.players, firstDealer: o.firstDealer, writer: o.writer || null, lastRound: false, lastRoundAt: 0, soloCount: o.soloCount || 1, soloPeriod: 'abend' }
+        data: { status: 'aktiv', n: o.n, players: o.players, firstDealer: o.firstDealer, writer: o.writer || null, lastRound: false, lastRoundAt: 0, soloCount: o.soloCount == null ? 1 : o.soloCount, soloPeriod: ruleStr(o.rule || { period: 'abend' }) }
       }).then(evOf);
     },
     updateEvening: function (id, patch) {
