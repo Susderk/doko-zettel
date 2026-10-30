@@ -127,8 +127,15 @@
     s.querySelector('#saveBtn').disabled = !valid;
   }
 
+  function isLastGame(rowId) {
+    var rows = App.engine().rows;
+    return rows.length > 0 && rows[rows.length - 1].game.rowId === rowId;
+  }
+  function notLast() { App.toast('Es wurde schon ein neueres Spiel eingetragen. Dieses Spiel lässt sich nicht mehr ändern.'); App.closeSheet(); }
+
   function save(btn) {
     var d = draft, g = { mode: d.mode, dealer: d.dealer, re: d.re.slice(), reAug: d.reAug, reA: d.reA, kA: d.kA, ex: d.ex, bock: !!d.bock };
+    if (editRow && !isLastGame(editRow)) { notLast(); return; }
     btn.disabled = true;
     var p;
     if (editRow) p = Data.updateGame(editRow, g);
@@ -153,11 +160,11 @@
     var desc = [g.mode === 'solo' ? (row.pflicht ? 'Pflichtsolo' : 'Solo') : 'Normalspiel', 'Augen ' + g.reAug + ' : ' + (240 - g.reAug), 'Geber ' + names[row.dealer]];
     if (g.reA || g.kA) desc.push('Re: ' + REOPT[g.reA] + ', Kontra: ' + KOPT[g.kA]);
     if (g.bock) desc.push('Bockspiel');
-    var mine = App.isWriter();
+    var last = isLastGame(detailRow);
     App.openSheet('<div class="col"><div class="bar"><button type="button" class="btn ghost" data-act="close">Schließen</button><h2>Spiel ' + row.nr + '</h2></div><div class="body">' +
       '<p class="sub">' + esc(desc.join(' · ')) + '</p><div class="plist">' + pl + '</div>' +
       '<section class="blk"><h3>Rechenweg</h3><div class="ledger">' + ledgerHTML(r) + '</div></section>' +
-      (mine ? '<div class="row"><button type="button" class="btn" data-act="gedit">Bearbeiten</button><button type="button" class="btn danger" data-act="gdel">' + (delArm ? 'Wirklich löschen?' : 'Löschen') + '</button></div>' : '<p class="hint">Nur der Schreiber kann Spiele ändern.</p>') + '</div></div>');
+      (last ? '<div class="row"><button type="button" class="btn" data-act="gedit">Bearbeiten</button><button type="button" class="btn danger" data-act="gdel">' + (delArm ? 'Wirklich löschen?' : 'Löschen') + '</button></div>' : '<p class="hint">Nur das letzte Spiel lässt sich noch ändern, solange kein neueres eingetragen ist.</p>') + '</div></div>');
   }
 
   document.addEventListener('click', function (e) {
@@ -166,11 +173,13 @@
     var a = t.dataset.act;
     if (a === 'formClose') App.closeSheet();
     else if (a === 'gedit') {
+      if (!isLastGame(detailRow)) { notLast(); return; }
       var rows = App.engine().rows, row = rows.filter(function (x) { return x.game.rowId === detailRow; })[0];
       var g = clone(row.game); delete g.rowId; delete g.nr; delete g.abendId; delete g.created;
       draft = g; editRow = detailRow; st = App.engine(); openForm();
     }
     else if (a === 'gdel') {
+      if (!isLastGame(detailRow)) { notLast(); return; }
       if (!delArm) { delArm = true; showDetail(); return; }
       Data.deleteGame(detailRow).then(function () { App.closeSheet(); return App.refresh(); }).catch(App.fail);
     }
