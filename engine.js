@@ -70,7 +70,7 @@
     var pp = []; for (var z = 0; z < n; z++) pp.push(0);
     var act = activeFor(n, g.dealer);
     var re = g.re || [], kon = act.filter(function (i) { return re.indexOf(i) < 0; });
-    var v = Math.abs(netRe), f = solo ? 4 : 1;
+    var v = Math.abs(netRe), f = solo ? 4 : 2;
     if (netRe > 0) kon.forEach(function (i) { pp[i] = -f * v; });
     else if (netRe < 0) re.forEach(function (i) { pp[i] = -f * v; });
     return { W: W, groups: groups, raw: raw, mult: mult, netRe: netRe, pp: pp, solo: solo };

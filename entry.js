@@ -66,11 +66,12 @@
     });
     var v = Math.abs(r.netRe);
     if (r.mult === 2) h += '<div class="sumrow"><span>Bockspiel ×2</span><b>' + v + '</b></div>';
+    if (!r.solo && v > 0) h += '<div class="sumrow"><span>Nur Minuspunkte: Differenz (×2)</span><b>' + 2 * v + '</b></div>';
     if (r.solo && v > 0) h += '<div class="sumrow"><span>Solo: Differenz (×4)</span><b>' + 4 * v + '</b></div>';
     return h;
   }
   function resultLine(r) {
-    var m = 0 - (r.solo ? 4 : 1) * Math.abs(r.netRe);
+    var m = 0 - (r.solo ? 4 : 2) * Math.abs(r.netRe);
     if (r.netRe === 0) return 'Unentschieden, keine Minuspunkte';
     if (r.solo) return r.netRe > 0 ? 'Jeder Gegner ' + App.fmt(m) + ' · Solist 0' : 'Solist ' + App.fmt(m) + ' · Gegner 0';
     return r.netRe > 0 ? 'Kontra ' + App.fmt(m) + ' je Spieler · Re 0' : 'Re ' + App.fmt(m) + ' je Spieler · Kontra 0';
