@@ -44,10 +44,11 @@
       '<p class="hint" id="geber"></p></section>' +
       '<section class="blk"><h3 id="reTitle">Re-Spieler</h3><div class="chips" id="chips"></div><p class="hint" id="reHint"></p><div id="info"></div></section>' +
       '<section class="blk"><h3><label for="aug">Augen der Re-Partei</label></h3>' +
+      '<input type="range" id="augRange" min="0" max="240" step="1" aria-label="Augen Re, Schieberegler"><div class="ticks"><span>0</span><span>60</span><span>120</span><span>180</span><span>240</span></div>' +
       '<div class="augnums"><span class="re">Re<b id="augRe">120</b></span><span>Kontra<b id="augK">120</b></span></div>' +
       '<div class="augctl"><button type="button" class="mini wide" data-act="fstep" data-d="-10">' + MINUS + '10</button><button type="button" class="mini" data-act="fstep" data-d="-1">' + MINUS + '1</button>' +
       '<input type="number" id="aug" inputmode="numeric" min="0" max="240" step="1" aria-label="Augen Re"><button type="button" class="mini" data-act="fstep" data-d="1">+1</button><button type="button" class="mini wide" data-act="fstep" data-d="10">+10</button></div>' +
-      '<input type="range" id="augRange" min="0" max="240" step="1" aria-label="Augen Re, Schieberegler"><div class="ticks"><span>0</span><span>60</span><span>120</span><span>180</span><span>240</span></div></section>' +
+      '</section>' +
       '<section class="blk"><h3>Ansagen</h3><div class="two"><label class="fld"><span id="reALbl">Re-Partei</span><select id="reA">' + opts(REOPT) + '</select></label>' +
       '<label class="fld"><span>Kontra-Partei</span><select id="kA">' + opts(KOPT) + '</select></label></div></section>' +
       '<section class="blk" id="exSec"><h3>Sonderpunkte</h3><div class="exgrid"><span></span><span class="ch">Re</span><span class="ch">Kontra</span>' + ex + '</div><p class="hint">Gezählt wird für die Partei, die den Punkt macht.</p></section>' +
