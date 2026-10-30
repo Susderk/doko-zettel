@@ -84,6 +84,11 @@
       return tdb.updateRow({ databaseId: C.db, tableId: 'abende', rowId: id, data: d }).then(evOf);
     },
 
+    deleteEvening: function (id) {
+      return Data.games(id).then(function (gs) {
+        return gs.reduce(function (p, g) { return p.then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'spiele', rowId: g.rowId }); }); }, Promise.resolve());
+      }).then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'abende', rowId: id }); });
+    },
     games: function (eveningId) { return listAll('spiele', [Q.equal('abendId', [eveningId])]).then(function (rows) { return rows.map(gameOf).sort(byGame); }); },
     allGames: function () { return listAll('spiele').then(function (rows) { return rows.map(gameOf).sort(byGame); }); },
     addGame: function (eveningId, nr, g) {

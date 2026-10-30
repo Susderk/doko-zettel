@@ -60,7 +60,8 @@
         '<p class="hint">Zu zahlen: Minuspunkte geteilt durch 10, aufgerundet auf ganze Euro. Zusammen ' + total + ' €.</p>' +
         '<div class="list" style="margin-top:16px"><button type="button" class="btn primary big" data-act="sharePdf">PDF teilen (WhatsApp)</button>' +
         '<button type="button" class="btn big" data-act="shareText">Als Text an WhatsApp</button>' +
-        '<button type="button" class="btn big" data-act="csvSum">CSV herunterladen</button></div></main>';
+        '<button type="button" class="btn big" data-act="csvSum">CSV herunterladen</button>' +
+        '<button type="button" class="btn big danger" data-act="delEv" data-id="' + ev.id + '">Abend löschen</button></div></main>';
     });
   };
 
@@ -94,7 +95,22 @@
     return doc.output('blob');
   }
 
-  App.reportAction = function (a) {
+  App.reportAction = function (a, t) {
+    if (a === 'delEv') {
+      var id = t.dataset.id;
+      Promise.all([Data.evening(id), Data.games(id)]).then(function (x) {
+        var nm = App.names(x[0]).join(', ');
+        App.openSheet('<div class="col"><div class="bar"><button type="button" class="btn ghost" data-act="close">Abbrechen</button><h2>Abend löschen</h2></div><div class="body">' +
+          '<div class="note warn"><b>Abend vom ' + App.dateStr(x[0].created) + ' endgültig löschen?</b>' + esc(nm) + ' · ' + x[1].length + ' Spiele. Das lässt sich nicht rückgängig machen und gilt für alle Mitspieler.</div>' +
+          '<button type="button" class="btn danger big" data-act="delEvOk" data-id="' + id + '">Ja, endgültig löschen</button></div></div>');
+      }).catch(App.fail);
+      return;
+    }
+    if (a === 'delEvOk') {
+      t.disabled = true;
+      Data.deleteEvening(t.dataset.id).then(function () { App.closeSheet(); App.toast('Abend gelöscht.'); App.go('home'); }).catch(function (e) { t.disabled = false; App.fail(e); });
+      return;
+    }
     if (a === 'sharePdf') {
       if (!sumCache) return;
       var blob, name = 'doppelkopf-' + isoDate(sumCache.ev.created) + '.pdf';

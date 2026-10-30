@@ -57,7 +57,7 @@
 
   App.refresh = function () {
     if (S.route === 'abend' && S.ev) {
-      return Promise.all([Data.evening(S.ev.id), Data.games(S.ev.id), loadProfiles()]).then(function (r) { S.ev = r[0]; S.games = r[1]; renderZettel(); }).catch(function () { });
+      return Promise.all([Data.evening(S.ev.id), Data.games(S.ev.id), loadProfiles()]).then(function (r) { S.ev = r[0]; S.games = r[1]; renderZettel(); }).catch(function (er) { if (er && er.code === 404) { App.toast('Dieser Abend wurde gelöscht.'); App.go('home'); } });
     }
     if (S.route === 'home') return Promise.all([Data.activeEvenings(), loadProfiles()]).then(function (r) { S.active = r[0]; renderHome(); }).catch(function () { });
     return Promise.resolve();
@@ -218,7 +218,7 @@
       '<button type="button" class="btn" data-act="goto" data-to="home">Übersicht</button></header>' + wline + banner +
       '<p class="legend">Blau = Re-Partei. Große Zahl = Minuspunkte im Spiel, kleine Zahl = Zwischenstand.' + (n === 4 ? ' G = Geber.' : '') + '</p>' +
       '<table class="zettel"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>' +
-      '<div class="row" style="margin-top:14px"><button type="button" class="btn small" data-act="csvNow">CSV laden</button></div></main>' +
+      '<div class="row" style="margin-top:14px"><button type="button" class="btn small" data-act="csvNow">CSV laden</button><button type="button" class="btn small danger" data-act="delEv" data-id="' + ev.id + '">Abend löschen</button></div></main>' +
       '<div class="dock"><div class="dock-in">' + dock + '</div></div>';
   }
   App.renderZettel = renderZettel;
