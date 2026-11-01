@@ -82,7 +82,7 @@
     var v = Math.abs(netRe), f = solo ? R_.solo : R_.normal;
     if (netRe > 0) kon.forEach(function (i) { pp[i] = -f * v; });
     else if (netRe < 0) re.forEach(function (i) { pp[i] = -f * v; });
-    return { W: W, groups: groups, raw: raw, mult: mult, factor: f, netRe: netRe, pp: pp, solo: solo };
+    return { W: W, groups: groups, raw: raw, base: base, exNet: exR - exK, mult: mult, factor: f, netRe: netRe, pp: pp, solo: solo };
   }
 
   /* Solo-Regel: count Solos je Einheit; Einheit = 'abend' | 'stunde' | 'runden' (alle `every` Runden).

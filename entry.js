@@ -59,16 +59,20 @@
   }
 
   function ledgerHTML(r) {
-    var h = '';
+    var h = '', multi = r.groups.length > 1;
     r.groups.forEach(function (gr) {
       h += '<div><h4>' + gr.title + '</h4>';
       h += gr.lines.length ? '<ul>' + gr.lines.map(function (l) { return '<li><span>' + l[0] + '</span><b>' + (l[1] > 0 ? '+' : MINUS) + Math.abs(l[1]) + '</b></li>'; }).join('') + '</ul>' : '<p class="hint">Keine Punkte</p>';
-      h += '<div class="sumrow"><span>Summe</span><b>' + gr.total + '</b></div></div>';
+      h += '<div class="sumrow"><span>' + (multi ? 'Zwischensumme' : 'Summe') + '</span><b>' + gr.total + '</b></div></div>';
     });
     var v = Math.abs(r.netRe);
+    if (multi) {
+      var sg = r.raw >= 0 ? 1 : -1, terms = [r.base * sg, r.exNet * sg].filter(function (x) { return x !== 0; });
+      var formula = terms.map(function (x, i) { return i === 0 ? (x < 0 ? MINUS : '') + Math.abs(x) : (x < 0 ? ' ' + MINUS + ' ' : ' + ') + Math.abs(x); }).join('');
+      h += '<div class="sumrow"><span>Summe aller Punkte' + (terms.length > 1 ? ' (' + formula + ')' : '') + '</span><b>' + Math.abs(r.raw) + '</b></div>';
+    }
     if (r.mult !== 1) h += '<div class="sumrow"><span>Bockspiel ×' + r.mult + '</span><b>' + v + '</b></div>';
-    if (!r.solo && v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte</span><b>' + r.factor * v + '</b></div>';
-    if (r.solo && v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte</span><b>' + r.factor * v + '</b></div>';
+    if (v > 0) h += '<div class="sumrow"><span>Geschriebene Punkte (×' + r.factor + ')</span><b>' + r.factor * v + '</b></div>';
     return h;
   }
   function resultLine(r) {
