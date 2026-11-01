@@ -180,8 +180,9 @@
     var best = Math.max.apply(null, cum);
     var head = '<th class="nr" scope="col">#</th>';
     for (p = 0; p < n; p++) head += '<th scope="col"><span class="nm">' + esc(names[p]) + '</span><span class="tot ' + (st.rows.length && cum[p] === best ? 'lead ' : '') + App.cls(cum[p]) + '">' + App.num(cum[p]) + '</span></th>';
+    head += '<th class="wv" scope="col" title="Spielwert aus Sicht der Re-Partei"><span class="nm">Wert</span></th>';
     var body = '';
-    if (!st.rows.length) body = '<tr><td colspan="' + (n + 1) + '" class="empty"><b>Noch kein Spiel</b>Der Schreiber trägt Spiele ein. Alle anderen sehen den Stand sofort.</td></tr>';
+    if (!st.rows.length) body = '<tr><td colspan="' + (n + 2) + '" class="empty"><b>Noch kein Spiel</b>Der Schreiber trägt Spiele ein. Alle anderen sehen den Stand sofort.</td></tr>';
     for (var i = st.rows.length - 1; i >= 0; i--) {
       var r = st.rows[i], g = r.game, tags = [];
       if (g.mode === 'solo') tags.push(r.pflicht ? 'Pflichtsolo' : 'Solo');
@@ -193,7 +194,8 @@
         var v = r.res.pp[p];
         body += '<td class="' + (g.re.indexOf(p) >= 0 ? 're' : '') + '"><span class="d ' + App.cls(v) + '">' + App.fmt(v) + '</span><span class="s">' + App.num(rowsCum[i][p]) + '</span>' + (n === 4 && r.dealer === p ? '<i class="g">G</i>' : '') + '</td>';
       }
-      body += '</tr>';
+      var nv = r.res.netRe;
+      body += '<td class="wv">' + (nv === 0 ? '±0' : (nv > 0 ? '+' : MINUS) + Math.abs(nv)) + '</td></tr>';
     }
     var banner = '', dealerName = esc(names[st.dealer]);
     if (st.phase === 'normal') banner = '<div class="note"><b>Runde ' + st.round + ' · Geber: ' + dealerName + '</b>' + (n === 5 ? esc(names[st.dealer]) + ' setzt aus.' : '') + '</div>';
