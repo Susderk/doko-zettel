@@ -100,7 +100,8 @@
       '<h3 class="sec">Laufende Abende</h3>' +
       '<div class="list">' + (cards || '<p class="hint">Gerade läuft kein Abend. Starte unten einen neuen.</p>') + '</div>' +
       '<div class="menu"><button type="button" class="btn" data-act="goto" data-to="statistik">Statistik</button><button type="button" class="btn" data-act="goto" data-to="archiv">Abgeschlossene Abende</button>' +
-      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button><button type="button" class="btn" data-act="goto" data-to="regeln">Punkte-Regeln</button></div></main>' +
+      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button><button type="button" class="btn" data-act="goto" data-to="regeln">Punkte-Regeln</button>' +
+      '<button type="button" class="btn" data-act="shareApp">App-Link teilen</button></div></main>' +
       '<div class="dock"><div class="dock-in"><button type="button" class="btn primary big" data-act="goto" data-to="neu">Neuer Abend</button></div></div>';
   }
 
@@ -236,6 +237,12 @@
     var a = t.dataset.act, st = S.setup;
     if (a === 'reload') route();
     else if (a === 'goto') App.go(t.dataset.to);
+    else if (a === 'shareApp') {
+      var url = location.origin + location.pathname, msg = 'Doko-Zettel: Doppelkopf zählen, gemeinsam und live';
+      if (navigator.share) navigator.share({ title: 'Doko-Zettel', text: msg, url: url }).catch(function (e) { if (e && e.name !== 'AbortError') App.toast('Teilen ging nicht.'); });
+      else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { App.toast('Link kopiert: ' + url); }, function () { App.toast(url); });
+      else App.toast(url);
+    }
     else if (a === 'close') App.closeSheet();
     else if (a === 'askMe') App.askMe(null);
     else if (a === 'iam') setMe(t.dataset.id);
