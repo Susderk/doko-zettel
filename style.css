@@ -168,3 +168,8 @@ body::before{content:"";position:fixed;left:0;right:0;bottom:64px;height:min(62v
 .wrap>.top .sub,.wrap>.hint,.wrap>.sec,.wrap>h3,.wrap>p.sub{color:var(--on-table2)}
 .dock{background:var(--table);border-top:2px solid var(--on-table2)}
 body::before{opacity:.32}
+
+.title-row{display:flex;align-items:center;gap:10px}
+.icon-btn{flex:none;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--on-table);cursor:pointer;touch-action:manipulation}
+.icon-btn:active{background:rgba(255,255,255,.12)}
+.icon-btn:focus-visible{outline:2px solid var(--on-table);outline-offset:2px}

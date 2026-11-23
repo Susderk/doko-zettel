@@ -94,14 +94,14 @@
       return '<div class="item"><div class="grow"><b>Abend vom ' + App.dateStr(ev.created) + '</b><small>' + esc(names) + '</small><small>Schreiber: ' + esc(ev.writer ? App.nameOf(ev.writer) : 'niemand') + '</small></div>' +
         '<button type="button" class="btn primary small" data-act="openEv" data-id="' + ev.id + '">Öffnen</button></div>';
     }).join('');
-    $app.innerHTML = '<main class="wrap"><header class="top"><div><h1>Doko-Zettel</h1><p class="sub">Doppelkopf zählen, gemeinsam und live</p></div></header>' +
+    $app.innerHTML = '<main class="wrap"><header class="top"><div><div class="title-row"><h1>Doko-Zettel</h1><button type="button" class="icon-btn" data-act="shareApp" aria-label="App-Link teilen" title="App-Link teilen"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg></button></div><p class="sub">Doppelkopf zählen, gemeinsam und live</p></div></header>' +
       '<div class="note ' + (me ? 'me' : 'warn') + '">' + (me ? '<b>Du bist ' + esc(me.name) + '</b>' : '<b>Wer bist du?</b>Wähle dein Profil, damit du Statistik und Schreibrechte nutzen kannst.') +
       '<button type="button" class="btn small" style="margin-top:8px" data-act="askMe">' + (me ? 'Anderes Profil wählen' : 'Profil wählen') + '</button></div>' +
       '<h3 class="sec">Laufende Abende</h3>' +
       '<div class="list">' + (cards || '<p class="hint">Gerade läuft kein Abend. Starte unten einen neuen.</p>') + '</div>' +
       '<div class="menu"><button type="button" class="btn" data-act="goto" data-to="statistik">Statistik</button><button type="button" class="btn" data-act="goto" data-to="archiv">Abgeschlossene Abende</button>' +
       '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button><button type="button" class="btn" data-act="goto" data-to="regeln">Punkte-Regeln</button>' +
-      '<button type="button" class="btn" data-act="shareApp">App-Link teilen</button></div></main>' +
+      '</div></main>' +
       '<div class="dock"><div class="dock-in"><button type="button" class="btn primary big" data-act="goto" data-to="neu">Neuer Abend</button></div></div>';
   }
 
