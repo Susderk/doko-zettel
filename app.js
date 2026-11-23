@@ -42,13 +42,14 @@
 
   function route() {
     if (App.stopWatch) { App.stopWatch(); App.stopWatch = null; }
+    if (App.flushRules) App.flushRules();
     if (App.sheetOpen()) App.closeSheet();
     var h = (location.hash || '#home').slice(1).split('/');
     S.route = h[0] || 'home';
     window.scrollTo(0, 0);
     var go = {
       home: viewHome, neu: viewSetup, spieler: viewPlayers, abend: function () { return viewEvening(h[1]); },
-      statistik: function () { return App.viewStats(); }, archiv: viewArchive, regeln: function () { return App.viewRules(); }, zusammenfassung: function () { return App.viewSummary(h[1]); }
+      statistik: function () { return App.viewStats(); }, archiv: viewArchive, regeln: function () { return App.viewRules(h[1]); }, zusammenfassung: function () { return App.viewSummary(h[1]); }
     }[S.route] || viewHome;
     setBusy();
     Promise.resolve().then(go).catch(function (e) { App.fail(e); $app.innerHTML = '<div class="note warn"><b>Keine Verbindung</b>Die Daten konnten nicht geladen werden.</div><button class="btn primary big" data-act="reload">Noch einmal laden</button>'; });
@@ -100,7 +101,7 @@
       '<h3 class="sec">Laufende Abende</h3>' +
       '<div class="list">' + (cards || '<p class="hint">Gerade läuft kein Abend. Starte unten einen neuen.</p>') + '</div>' +
       '<div class="menu"><button type="button" class="btn" data-act="goto" data-to="statistik">Statistik</button><button type="button" class="btn" data-act="goto" data-to="archiv">Abgeschlossene Abende</button>' +
-      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button><button type="button" class="btn" data-act="goto" data-to="regeln">Punkte-Regeln</button>' +
+      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button>' +
       '</div></main>' +
       '<div class="dock"><div class="dock-in"><button type="button" class="btn primary big" data-act="goto" data-to="neu">Neuer Abend</button></div></div>';
   }
@@ -123,7 +124,7 @@
   /* ---------- Neuer Abend ---------- */
   function viewSetup() {
     return loadProfiles().then(function () {
-      if (!S.setup) S.setup = { n: 4, picked: [], first: 0, count: 1, period: 'abend', every: 5 };
+      if (!S.setup) S.setup = { n: 4, picked: [], first: 0, count: 1, period: 'abend', every: 5, rmode: 'standard', rules: D.mergeRules({}) };
       renderSetup();
     });
   }
@@ -146,7 +147,9 @@
       '<div class="seg" style="margin-top:10px"><button type="button" data-act="setPer" data-v="abend" aria-pressed="' + (st.period === 'abend') + '">pro Abend</button><button type="button" data-act="setPer" data-v="stunde" aria-pressed="' + (st.period === 'stunde') + '">pro Stunde</button><button type="button" data-act="setPer" data-v="runden" aria-pressed="' + (st.period === 'runden') + '">pro x Runden</button></div>' +
       (st.period === 'runden' ? '<div class="row" style="margin-top:10px"><button type="button" class="mini" data-act="evDec" aria-label="Weniger Runden">' + MINUS + '</button><b style="font:500 24px var(--font-num);min-width:2ch;text-align:center">' + st.every + '</b><button type="button" class="mini" data-act="evInc" aria-label="Mehr Runden">+</button><span class="grow">Runden (1 Runde = alle geben einmal)</span></div>' : '') +
       '<p class="hint">' + (st.period === 'abend' ? 'Jeder spielt sein Pflichtsolo einmal pro Abend.' : st.period === 'stunde' ? 'Pro volle Stunde Spielzeit schuldet jeder die eingestellte Anzahl Solos. Was am Ende fehlt, wird nach der letzten Runde nachgespielt.' : 'Pro ' + st.every + ' volle Runde(n) schuldet jeder die eingestellte Anzahl Solos. Was am Ende fehlt, wird nach der letzten Runde nachgespielt.') + '</p></div>' +
-      '<p class="hint">Die Punkte-Werte stehen unter „Punkte-Regeln“ im Menü. Sie werden beim Start festgehalten.</p>' +
+      '<div class="blk"><h3>Punkte-Regeln</h3><div class="seg"><button type="button" data-act="setRm" data-v="standard" aria-pressed="' + (st.rmode === 'standard') + '">Standard</button><button type="button" data-act="setRm" data-v="eigen" aria-pressed="' + (st.rmode === 'eigen') + '">Individuell</button></div>' +
+      '<p class="hint">' + (st.rmode === 'standard' ? 'Es gelten die Standardwerte. Am laufenden Abend lassen sie sich unter „Punkte-Regeln“ noch ändern.' : 'Die Werte gelten nur für diesen Abend. Andere Abende behalten ihre eigenen.') + '</p>' +
+      (st.rmode === 'eigen' ? App.rulesEditor(st.rules) : '') + '</div>' +
       '<button type="button" class="btn primary big" data-act="startEv"' + (ok ? '' : ' disabled') + '>Abend starten</button></section></main>';
   }
 
@@ -222,7 +225,7 @@
       '<button type="button" class="btn" data-act="goto" data-to="home">Übersicht</button></header>' + wline + banner +
       '<p class="legend">Blau = Re-Partei. Große Zahl = Minuspunkte im Spiel, kleine Zahl = Zwischenstand.' + (n === 4 ? ' G = Geber.' : '') + '</p>' +
       '<table class="zettel"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>' +
-      '<div class="row" style="margin-top:14px"><button type="button" class="btn small" data-act="csvNow">CSV laden</button><button type="button" class="btn small danger" data-act="delEv" data-id="' + ev.id + '">Abend löschen</button></div></main>' +
+      '<div class="row" style="margin-top:14px"><button type="button" class="btn small" data-act="goto" data-to="regeln/' + ev.id + '">Punkte-Regeln' + (App.rulesCustom(ev.rules) ? ' (angepasst)' : '') + '</button><button type="button" class="btn small" data-act="csvNow">CSV laden</button><button type="button" class="btn small danger" data-act="delEv" data-id="' + ev.id + '">Abend löschen</button></div></main>' +
       '<div class="dock"><div class="dock-in">' + dock + '</div></div>';
   }
   App.renderZettel = renderZettel;
@@ -279,6 +282,7 @@
       if (!q) return;
       Data.createProfile(q).then(function (pr) { S.profiles.push(pr); S.pm[pr.id] = pr; if (st.picked.length < st.n) st.picked.push(pr.id); renderSetup(); }).catch(App.fail);
     }
+    else if (a === 'setRm') { st.rmode = t.dataset.v; renderSetup(); }
     else if (a === 'soloDec') { st.count = Math.max(0, st.count - 1); renderSetup(); }
     else if (a === 'setPer') { st.period = t.dataset.v; renderSetup(); }
     else if (a === 'evDec') { st.every = Math.max(1, st.every - 1); renderSetup(); }
@@ -287,7 +291,7 @@
     else if (a === 'startEv') {
       if (!needMe(function () { t.click(); })) return;
       t.disabled = true;
-      Data.createEvening({ n: st.n, players: st.picked, firstDealer: st.first, writer: S.me, soloCount: st.count, rule: { period: st.period, every: st.every } })
+      Data.createEvening({ n: st.n, players: st.picked, firstDealer: st.first, writer: S.me, soloCount: st.count, rule: { period: st.period, every: st.every }, rules: st.rmode === 'eigen' ? App.rulesDiff(st.rules) : {} })
         .then(function (ev) { S.setup = null; App.go('abend/' + ev.id); }).catch(function (er) { t.disabled = false; App.fail(er); });
     }
     else if (a === 'takeOver') {

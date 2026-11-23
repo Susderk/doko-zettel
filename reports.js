@@ -45,7 +45,7 @@
   };
 
 
-  /* ---------- Punkte-Regeln (gelten für neu gestartete Abende) ---------- */
+  /* ---------- Punkte-Regeln (je Abend) ---------- */
   var RGROUPS = [
     ['Gewinn', [['won', 'Gewonnen'], ['alten', 'Gegen die Alten', 'Kontra gewinnt im Normalspiel']]],
     ['Re und Kontra', [['reAn', 'Re angesagt'], ['kAn', 'Kontra angesagt']]],
@@ -55,35 +55,60 @@
     ['Sonderpunkte', [['fuchs', 'Fuchs gefangen'], ['dk', 'Doppelkopf'], ['karlchen', 'Karlchen']]],
     ['Aufgeschrieben wird', [['normal', 'Normalspiel: Spielwert ×', 'Nur Minuspunkte: die Differenz', 1], ['solo', 'Solo: Spielwert ×', 'Differenz zu den Gegnern', 1], ['bock', 'Bockspiel: Punkte ×', 'nach einem Spiel mit 0 Punkten', 1]]]
   ];
-  var rulesState = null, rulesTimer = null;
+  /* rulesCtx: { state, evId } — evId leer = Einstellung beim Anlegen (ohne Speichern) */
+  var rulesCtx = null, rulesTimer = null;
   function rdef() { return D.RULES; }
-  function rdiff() { var o = {}, d = rdef(); Object.keys(d).forEach(function (k) { if (rulesState[k] !== d[k]) o[k] = rulesState[k]; }); return o; }
+  App.rulesDiff = function (st) { var o = {}, d = rdef(); Object.keys(d).forEach(function (k) { if (st[k] !== d[k]) o[k] = st[k]; }); return o; };
+  App.rulesCustom = function (r) { return Object.keys(App.rulesDiff(D.mergeRules(r))).length > 0; };
+  function saveNow() {
+    if (rulesTimer) { clearTimeout(rulesTimer); rulesTimer = null; }
+    if (!rulesCtx || !rulesCtx.evId || !rulesCtx.dirty) return Promise.resolve();
+    rulesCtx.dirty = false;
+    var c = rulesCtx;
+    return Data.saveEveningRules(c.evId, App.rulesDiff(c.state)).then(function () { var s2 = document.getElementById('rsave'); if (s2) s2.textContent = 'Gespeichert. Der Abend ist neu berechnet.'; }).catch(function (e) { c.dirty = true; App.fail(e); });
+  }
+  App.flushRules = saveNow;
   function saveRulesSoon() {
+    if (!rulesCtx.evId) return;
+    rulesCtx.dirty = true;
     if (rulesTimer) clearTimeout(rulesTimer);
     var stat = document.getElementById('rsave'); if (stat) stat.textContent = 'Speichert …';
-    rulesTimer = setTimeout(function () {
-      rulesTimer = null;
-      Data.saveGlobalRules(rdiff()).then(function () { var s2 = document.getElementById('rsave'); if (s2) s2.textContent = 'Gespeichert.'; }).catch(function (e) { App.fail(e); });
-    }, 500);
+    rulesTimer = setTimeout(saveNow, 500);
   }
-  function renderRules() {
+  /* Liste mit +/− je Punktquelle; wird beim Anlegen und am laufenden Abend verwendet */
+  App.rulesEditor = function (state, evId) {
+    rulesCtx = { state: state, evId: evId || null, dirty: false };
     var d = rdef(), h = '';
     RGROUPS.forEach(function (g) {
       h += '<h3 class="sec">' + g[0] + '</h3><div class="list">';
       g[1].forEach(function (x) {
         h += '<div class="item"><div class="grow"><b>' + x[1] + '</b>' + (x[2] ? '<small>' + x[2] + '</small>' : '') + '</div>' +
           '<div class="row" style="gap:6px;flex:none"><button type="button" class="mini" data-act="rl" data-k="' + x[0] + '" data-d="-1" aria-label="Weniger: ' + x[1] + '">' + MINUS + '</button>' +
-          '<b id="rv-' + x[0] + '" style="font:500 26px var(--font-num);min-width:1.6ch;text-align:center' + (rulesState[x[0]] !== d[x[0]] ? ';color:var(--accent)' : '') + '">' + rulesState[x[0]] + '</b>' +
+          '<b id="rv-' + x[0] + '" style="font:500 26px var(--font-num);min-width:1.6ch;text-align:center' + (state[x[0]] !== d[x[0]] ? ';color:var(--accent)' : '') + '">' + state[x[0]] + '</b>' +
           '<button type="button" class="mini" data-act="rl" data-k="' + x[0] + '" data-d="1" aria-label="Mehr: ' + x[1] + '">+</button></div></div>';
       });
       h += '</div>';
     });
-    $app.innerHTML = '<main class="wrap"><header class="top"><div><h1>Punkte-Regeln</h1><p class="sub">Was gibt wie viele Punkte</p></div><button type="button" class="btn" data-act="goto" data-to="home">Zurück</button></header>' +
-      '<div class="note"><b>Gilt für neu gestartete Abende</b>Laufende und abgeschlossene Abende behalten die Werte, mit denen sie gestartet wurden. <span id="rsave"></span></div>' + h +
-      '<button type="button" class="btn big" data-act="rlReset" style="margin-top:16px">Auf Standard zurücksetzen</button></main>';
+    return h + '<button type="button" class="btn big" data-act="rlReset" style="margin-top:16px">Auf Standard zurücksetzen</button>';
+  };
+  function paintRules() {
+    var d = rdef(), st = rulesCtx.state;
+    Object.keys(d).forEach(function (k) { var el = document.getElementById('rv-' + k); if (el) { el.textContent = st[k]; el.style.color = st[k] !== d[k] ? 'var(--accent)' : ''; } });
   }
-  App.viewRules = function () {
-    return Data.globalRules().then(function (g) { rulesState = D.mergeRules(g); renderRules(); });
+  /* Punkte-Regeln eines laufenden Abends: Änderungen gelten rückwirkend für alle seine Spiele */
+  App.viewRules = function (evId) {
+    if (!evId) { App.go('home'); return; }
+    return Data.evening(evId).then(function (ev) {
+      var back = '<button type="button" class="btn" data-act="goto" data-to="abend/' + ev.id + '">Zurück</button>';
+      var head = '<main class="wrap"><header class="top"><div><h1>Punkte-Regeln</h1><p class="sub">Abend vom ' + App.dateStr(ev.created) + '</p></div>' + back + '</header>';
+      if (ev.status === 'beendet') {
+        $app.innerHTML = head + '<div class="note"><b>Abend abgeschlossen</b>Die Punkte-Regeln eines abgeschlossenen Abends lassen sich nicht mehr ändern.</div></main>';
+        return;
+      }
+      var st = D.mergeRules(ev.rules);
+      $app.innerHTML = head + '<div class="note warn"><b>Gilt nur für diesen Abend, rückwirkend</b>Alle schon eingetragenen Spiele dieses Abends werden mit den neuen Werten neu berechnet. Andere Abende bleiben unverändert. <span id="rsave"></span></div>' +
+        App.rulesEditor(st, ev.id) + '</main>';
+    });
   };
 
   /* ---------- Zusammenfassung ---------- */
@@ -138,14 +163,12 @@
   }
 
   App.reportAction = function (a, t) {
-    if (a === 'rl' && rulesState) {
-      var k = t.dataset.k, mn = (k === 'normal' || k === 'solo' || k === 'bock') ? 1 : 0;
-      rulesState[k] = Math.max(mn, Math.min(9, rulesState[k] + (+t.dataset.d)));
-      var el = document.getElementById('rv-' + k);
-      el.textContent = rulesState[k]; el.style.color = rulesState[k] !== rdef()[k] ? 'var(--accent)' : '';
-      saveRulesSoon(); return;
+    if (a === 'rl' && rulesCtx) {
+      var k = t.dataset.k, mn = (k === 'normal' || k === 'solo' || k === 'bock') ? 1 : 0, rs = rulesCtx.state;
+      rs[k] = Math.max(mn, Math.min(9, rs[k] + (+t.dataset.d)));
+      paintRules(); saveRulesSoon(); return;
     }
-    if (a === 'rlReset' && rulesState) { rulesState = D.mergeRules({}); renderRules(); saveRulesSoon(); return; }
+    if (a === 'rlReset' && rulesCtx) { var d0 = D.mergeRules({}); Object.keys(d0).forEach(function (q) { rulesCtx.state[q] = d0[q]; }); paintRules(); saveRulesSoon(); return; }
     if (a === 'delEv') {
       var id = t.dataset.id;
       Promise.all([Data.evening(id), Data.games(id)]).then(function (x) {

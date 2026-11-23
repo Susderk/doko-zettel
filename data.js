@@ -89,17 +89,15 @@
         return getRules(cfgRowId(id)).then(function (r) { ev.rules = r || {}; return ev; });
       });
     },
-    globalRules: function () { return getRules('cfgglobal').then(function (r) { return r || {}; }); },
-    saveGlobalRules: function (rules) { return putRules('cfgglobal', CFG + 'global', rules); },
+    /* Punkte-Regeln eines Abends: nur Abweichungen vom Standard werden gespeichert */
+    saveEveningRules: function (evId, rules) { return putRules(cfgRowId(evId), CFG + evId, rules || {}); },
     createEvening: function (o) {
       return tdb.createRow({
         databaseId: C.db, tableId: 'abende', rowId: ID.unique(),
         data: { status: 'aktiv', n: o.n, players: o.players, firstDealer: o.firstDealer, writer: o.writer || null, lastRound: false, lastRoundAt: 0, soloCount: o.soloCount == null ? 1 : o.soloCount, soloPeriod: ruleStr(o.rule || { period: 'abend' }) }
       }).then(evOf).then(function (ev) {
-        return Data.globalRules().then(function (g) {
-          ev.rules = g;
-          return putRules(cfgRowId(ev.id), CFG + ev.id, g).catch(function () { }).then(function () { return ev; });
-        });
+        ev.rules = o.rules || {};
+        return putRules(cfgRowId(ev.id), CFG + ev.id, ev.rules).catch(function () { }).then(function () { return ev; });
       });
     },
     updateEvening: function (id, patch) {
