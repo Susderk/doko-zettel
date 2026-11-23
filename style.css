@@ -13,24 +13,22 @@
   --font-ui:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
   --font-hand:"Caveat","Segoe Print","Bradley Hand",cursive;
   --font-num:"DM Mono",ui-monospace,Menlo,Consolas,monospace;
+  --table:#0f1b18;--table-grid:rgba(140,200,180,.07);--on-table:#e7f0eb;--on-table2:#9bb1a6;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1b18;--paper:#15251f;--ink:#e7f0eb;--ink2:#9bb1a6;--line:#2a4037;--grid:rgba(140,200,180,.07);
-  --accent:#8db1ff;--accent-ink:#0b1630;--accent-soft:rgba(141,177,255,.15);--good:#62d39b;--bad:#ff8c82;--warn-bg:#3a3010;--warn-ink:#ffe08a;color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 h1,h2,h3,h4,p,ul{margin:0}
 button,input,select{font:inherit;color:inherit}
 body{
-  background-color:var(--bg);color:var(--ink);font:16px/1.45 var(--font-ui);min-height:100vh;
-  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;
+  background-color:var(--table);color:var(--ink);font:16px/1.45 var(--font-ui);min-height:100vh;
+  background-image:linear-gradient(var(--table-grid) 1px,transparent 1px),linear-gradient(90deg,var(--table-grid) 1px,transparent 1px);background-size:24px 24px;
   padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
 }
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .wrap{max-width:560px;margin:0 auto;padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:6px 0 14px}
-h1{font:700 clamp(40px,12vw,54px)/.9 var(--font-hand);text-wrap:balance}
+h1{font:700 clamp(34px,10.5vw,54px)/.9 var(--font-hand);text-wrap:balance;min-width:0;overflow-wrap:anywhere}
 h2{font:700 32px/1 var(--font-hand)}
 .sub{color:var(--ink2);font-size:14px;margin-top:6px}
 .hint{font-size:13px;color:var(--ink2);margin-top:6px}
@@ -104,7 +102,7 @@ td i.g{position:absolute;top:2px;right:2px;font:600 9px/1 var(--font-ui);font-st
 .note{border:1.5px dashed var(--ink2);border-radius:10px;background:var(--paper);padding:10px 12px;margin-bottom:12px}
 .note b{display:block}
 .note.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:var(--warn-ink)}
-.note.me{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.note.me{border-style:solid;border-color:var(--accent);background:linear-gradient(var(--accent-soft),var(--accent-soft)),var(--paper)}
 .list{display:flex;flex-direction:column;gap:10px}
 .item{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--ink);border-radius:12px;background:var(--paper)}
 .item b{font:700 24px/1.1 var(--font-hand);display:block}
@@ -160,8 +158,13 @@ table.stat.sum td.pay{font-weight:700;font-size:16px}
 /* Dekoration: Kartenfächer im Hintergrund */
 body::before{content:"";position:fixed;left:0;right:0;bottom:64px;height:min(62vh,520px);background:url(cards.svg) no-repeat center bottom/min(560px,125vw);opacity:.26;pointer-events:none;z-index:0}
 #app{position:relative;z-index:1}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{opacity:.12}}
 @media print{body::before{display:none}}
 
 .zettel th.wv,.zettel td.wv{width:50px;font:600 17px var(--font-num);color:var(--ink);background:var(--bg)}
 .zettel th.wv .nm{font-size:15px}
+
+/* Dunkler Tisch: Text direkt auf dem Hintergrund hell, Zettel und Karten bleiben Papier */
+.wrap>.top h1,.wrap>.top h2,.wrap>.top h3{color:var(--on-table)}
+.wrap>.top .sub,.wrap>.hint,.wrap>.sec,.wrap>h3,.wrap>p.sub{color:var(--on-table2)}
+.dock{background:var(--table);border-top:2px solid var(--on-table2)}
+body::before{opacity:.32}
