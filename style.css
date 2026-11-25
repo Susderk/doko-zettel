@@ -173,3 +173,24 @@ body::before{opacity:.32}
 .icon-btn{flex:none;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--on-table);cursor:pointer;touch-action:manipulation}
 .icon-btn:active{background:rgba(255,255,255,.12)}
 .icon-btn:focus-visible{outline:2px solid var(--on-table);outline-offset:2px}
+/* Feedback */
+textarea{width:100%;padding:10px 12px;border:1.5px solid var(--ink2);border-radius:10px;background:var(--paper);color:var(--ink);font:16px/1.4 var(--font-ui);resize:vertical}
+.item.fb{align-items:stretch}
+.fb-open{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.fb-open b{overflow-wrap:anywhere}
+.fb-title{overflow-wrap:anywhere;margin-bottom:6px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.tag{font:600 12px/1 var(--font-ui);padding:4px 8px;border-radius:999px;border:1px solid var(--ink2);color:var(--ink2)}
+.tag.st-neu{border-color:var(--accent);color:var(--accent)}
+.tag.st-geplant{background:var(--warn-bg);border-color:var(--warn-ink);color:var(--warn-ink)}
+.tag.st-erledigt{background:var(--good);border-color:var(--good);color:#fff}
+.tag.st-abgelehnt{border-style:dashed}
+.vote{flex:none;min-width:64px;min-height:48px;padding:6px 10px;border:1.5px solid var(--ink2);border-radius:10px;background:var(--paper);color:var(--ink);font:600 18px/1 var(--font-ui);cursor:pointer;touch-action:manipulation;align-self:center}
+.vote b{font:500 18px var(--font-num)}
+.vote.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.cmt{padding:10px 14px;border:1.5px solid var(--ink2);border-radius:12px;background:var(--paper)}
+.cmt-h{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.cmt-h b{font:700 22px/1 var(--font-hand)}
+.cmt-h small{color:var(--ink2);font-size:12px;flex:1}
+.cmt p{overflow-wrap:anywhere}
+.linkbtn{background:none;border:0;padding:6px 0;color:var(--bad);font:600 13px var(--font-ui);cursor:pointer}

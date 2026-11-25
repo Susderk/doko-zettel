@@ -59,6 +59,19 @@
       .catch(function () { return tdb.createRow({ databaseId: C.db, tableId: 'spiele', rowId: rowId, data: data }); });
   }
   function isCfg(r) { return (r.abendId || '').indexOf(CFG) === 0; }
+  /* Feedback liegt ebenfalls in der Tabelle 'spiele', erkennbar am Präfix 'fb:' (Beiträge: 'fb:posts', Kommentare: 'fb:<Beitrags-ID>') */
+  var FB = 'fb:', FB_POSTS = 'fb:posts';
+  function isFb(r) { return (r.abendId || '').indexOf(FB) === 0; }
+  function isMeta(r) { return isCfg(r) || isFb(r); }
+  function fbOf(r) {
+    var d = {};
+    try { d = JSON.parse(r.data) || {}; } catch (e) { /* defekte Zeile wird ignoriert */ }
+    d.id = r.$id; d.created = r.$createdAt; d.parent = r.abendId === FB_POSTS ? null : r.abendId.slice(FB.length);
+    if (!d.parent) { d.votes = d.votes || []; d.status = d.status || 'neu'; }
+    return d;
+  }
+  function fbData(o) { var c = Object.assign({}, o); delete c.id; delete c.created; delete c.parent; return JSON.stringify(c); }
+  function nowNr() { return Math.floor(Date.now() / 1000); }
 
   var Data = {
     userId: null,
@@ -113,12 +126,12 @@
         .then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'abende', rowId: id }); });
     },
     games: function (eveningId) { return listAll('spiele', [Q.equal('abendId', [eveningId])]).then(function (rows) { return rows.map(gameOf).sort(byGame); }); },
-    allGames: function () { return listAll('spiele').then(function (rows) { return rows.filter(function (r) { return !isCfg(r); }).map(gameOf).sort(byGame); }); },
+    allGames: function () { return listAll('spiele').then(function (rows) { return rows.filter(function (r) { return !isMeta(r); }).map(gameOf).sort(byGame); }); },
     /* Statistik: Abende mit ihren Regeln und alle Spiele, ein Abruf */
     statsData: function () {
       return Promise.all([listAll('abende'), listAll('spiele')]).then(function (r) {
         var rules = {}, games = [];
-        r[1].forEach(function (x) { if (isCfg(x)) rules[x.abendId.slice(CFG.length)] = parseRules(x); else games.push(gameOf(x)); });
+        r[1].forEach(function (x) { if (isCfg(x)) rules[x.abendId.slice(CFG.length)] = parseRules(x); else if (!isFb(x)) games.push(gameOf(x)); });
         var evs = r[0].map(evOf); evs.forEach(function (ev) { ev.rules = rules[ev.id] || {}; });
         return { evenings: evs, games: games.sort(byGame) };
       });
@@ -128,6 +141,37 @@
     },
     updateGame: function (rowId, g) { return tdb.updateRow({ databaseId: C.db, tableId: 'spiele', rowId: rowId, data: { data: JSON.stringify(g) } }).then(gameOf); },
     deleteGame: function (rowId) { return tdb.deleteRow({ databaseId: C.db, tableId: 'spiele', rowId: rowId }); },
+
+    /* ---------- Feedback ---------- */
+    feedback: function () {
+      return listAll('spiele', [Q.startsWith('abendId', FB)]).then(function (rows) {
+        var posts = [], byId = {};
+        rows.forEach(function (r) { var f = fbOf(r); if (!f.parent) { f.comments = []; posts.push(f); byId[f.id] = f; } });
+        rows.forEach(function (r) { var f = fbOf(r); if (f.parent && byId[f.parent]) byId[f.parent].comments.push(f); });
+        posts.forEach(function (p) { p.comments.sort(function (a, b) { return a.created < b.created ? -1 : 1; }); });
+        return posts;
+      });
+    },
+    addFeedback: function (o) {
+      var d = { cat: o.cat, title: o.title, text: o.text, author: o.author, status: 'neu', votes: [] };
+      return tdb.createRow({ databaseId: C.db, tableId: 'spiele', rowId: ID.unique(), data: { abendId: FB_POSTS, nr: nowNr(), data: JSON.stringify(d) } }).then(fbOf);
+    },
+    addComment: function (postId, o) {
+      return tdb.createRow({ databaseId: C.db, tableId: 'spiele', rowId: ID.unique(), data: { abendId: FB + postId, nr: nowNr(), data: JSON.stringify({ text: o.text, author: o.author }) } }).then(fbOf);
+    },
+    /* Ändert einen Beitrag auf dem neuesten Stand aus der Datenbank, damit gleichzeitige Daumen nicht verloren gehen */
+    patchFeedback: function (postId, fn) {
+      return tdb.getRow({ databaseId: C.db, tableId: 'spiele', rowId: postId }).then(function (r) {
+        var f = fbOf(r); fn(f);
+        return tdb.updateRow({ databaseId: C.db, tableId: 'spiele', rowId: postId, data: { data: fbData(f) } }).then(fbOf);
+      });
+    },
+    deleteFeedback: function (postId) {
+      return listAll('spiele', [Q.equal('abendId', [FB + postId])]).then(function (rows) {
+        return rows.reduce(function (p, r) { return p.then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'spiele', rowId: r.$id }); }); }, Promise.resolve());
+      }).then(function () { return tdb.deleteRow({ databaseId: C.db, tableId: 'spiele', rowId: postId }); });
+    },
+    deleteComment: function (id) { return tdb.deleteRow({ databaseId: C.db, tableId: 'spiele', rowId: id }); },
 
     uploadCsv: function (name, text) {
       var f = new File([text], name, { type: 'text/csv' });

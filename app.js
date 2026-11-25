@@ -49,7 +49,8 @@
     window.scrollTo(0, 0);
     var go = {
       home: viewHome, neu: viewSetup, spieler: viewPlayers, abend: function () { return viewEvening(h[1]); },
-      statistik: function () { return App.viewStats(); }, archiv: viewArchive, regeln: function () { return App.viewRules(h[1]); }, zusammenfassung: function () { return App.viewSummary(h[1]); }
+      statistik: function () { return App.viewStats(); }, archiv: viewArchive, regeln: function () { return App.viewRules(h[1]); }, zusammenfassung: function () { return App.viewSummary(h[1]); },
+      feedback: function () { return App.viewFeedback(h[1]); }
     }[S.route] || viewHome;
     setBusy();
     Promise.resolve().then(go).catch(function (e) { App.fail(e); $app.innerHTML = '<div class="note warn"><b>Keine Verbindung</b>Die Daten konnten nicht geladen werden.</div><button class="btn primary big" data-act="reload">Noch einmal laden</button>'; });
@@ -60,9 +61,11 @@
     if (S.route === 'abend' && S.ev) {
       return Promise.all([Data.evening(S.ev.id), Data.games(S.ev.id), loadProfiles()]).then(function (r) { S.ev = r[0]; S.games = r[1]; renderZettel(); }).catch(function (er) { if (er && er.code === 404) { App.toast('Dieser Abend wurde gelöscht.'); App.go('home'); } });
     }
+    if (S.route === 'feedback' && App.fbRefresh) return App.fbRefresh();
     if (S.route === 'home') return Promise.all([Data.activeEvenings(), loadProfiles()]).then(function (r) { S.active = r[0]; renderHome(); }).catch(function () { });
     return Promise.resolve();
   };
+  App.watchView = watchView;
   function watchView() {
     App.stopWatch = Data.watch(function () { if (App.sheetOpen()) { S.stale = true; return; } App.refresh(); });
   }
@@ -101,7 +104,7 @@
       '<h3 class="sec">Laufende Abende</h3>' +
       '<div class="list">' + (cards || '<p class="hint">Gerade läuft kein Abend. Starte unten einen neuen.</p>') + '</div>' +
       '<div class="menu"><button type="button" class="btn" data-act="goto" data-to="statistik">Statistik</button><button type="button" class="btn" data-act="goto" data-to="archiv">Abgeschlossene Abende</button>' +
-      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button>' +
+      '<button type="button" class="btn" data-act="goto" data-to="spieler">Spieler</button><button type="button" class="btn" data-act="goto" data-to="feedback">Feedback</button>' +
       '</div></main>' +
       '<div class="dock"><div class="dock-in"><button type="button" class="btn primary big" data-act="goto" data-to="neu">Neuer Abend</button></div></div>';
   }
