@@ -63,15 +63,15 @@
     }
     var exR = 0, exK = 0;
     var ex = g.ex || blankEx();
-    if (!solo) {
+    {
       var el = [];
       [['f', 'Fuchs gefangen', R_.fuchs], ['d', 'Doppelkopf', R_.dk], ['k', 'Karlchen', R_.karlchen]].forEach(function (p) {
         var r = ex.R[p[0]] * p[2], q = ex.K[p[0]] * p[2], rn = ex.R[p[0]], qn = ex.K[p[0]];
-        if (r) el.push(['Re: ' + p[1] + (rn > 1 ? ' ×' + rn : ''), r]);
-        if (q) el.push(['Kontra: ' + p[1] + (qn > 1 ? ' ×' + qn : ''), -q]);
+        if (r) el.push([nm.R + ': ' + p[1] + (rn > 1 ? ' ×' + rn : ''), r]);
+        if (q) el.push([nm.K + ': ' + p[1] + (qn > 1 ? ' ×' + qn : ''), -q]);
         exR += r; exK += q;
       });
-      if (el.length) groups.push({ title: 'Sonderpunkte (Re minus Kontra)', lines: el, total: exR - exK });
+      if (el.length) groups.push({ title: 'Sonderpunkte (' + nm.R + ' minus ' + nm.K + ')', lines: el, total: exR - exK });
     }
     var mult = g.bock ? R_.bock : 1;
     var raw = base + exR - exK;
@@ -176,7 +176,7 @@
         else if ((res.netRe > 0) === inRe) o.won++; else o.lost++;
         if (res.solo && inRe) { o.solos++; if (res.netRe > 0) o.solosWon++; }
         if (g.bock) o.bock++;
-        if (!res.solo) { var e = g.ex[X]; o.foxes += e.f; o.doppelkopf += e.d; o.karlchen += e.k; }
+        var e = (g.ex || blankEx())[X]; o.foxes += e.f; o.doppelkopf += e.d; o.karlchen += e.k;
         if ((inRe ? g.reA : g.kA) >= 1) { if (inRe) o.annRe++; else o.annKontra++; }
         if ((inRe ? g.reA : g.kA) >= 2) o.absagen++;
       });

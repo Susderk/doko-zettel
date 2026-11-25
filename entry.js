@@ -51,7 +51,7 @@
       '</section>' +
       '<section class="blk"><h3>Ansagen</h3><div class="two"><label class="fld"><span id="reALbl">Re-Partei</span><select id="reA">' + opts(REOPT) + '</select></label>' +
       '<label class="fld"><span>Kontra-Partei</span><select id="kA">' + opts(KOPT) + '</select></label></div></section>' +
-      '<section class="blk" id="exSec"><h3>Sonderpunkte</h3><div class="exgrid"><span></span><span class="ch">Re</span><span class="ch">Kontra</span>' + ex + '</div><p class="hint">Gezählt wird für die Partei, die den Punkt macht.</p></section>' +
+      '<section class="blk" id="exSec"><h3>Sonderpunkte</h3><div class="exgrid"><span></span><span class="ch" id="exHR">Re</span><span class="ch" id="exHK">Kontra</span>' + ex + '</div><p class="hint">Gezählt wird für die Partei, die den Punkt macht.</p></section>' +
       '<section class="blk"><label class="check"><input type="checkbox" id="bock"><span id="bockLbl">Bockspiel</span></label></section>' +
       '<section class="blk"><h3>Rechenweg</h3><div class="ledger" id="ledger"></div></section></div>' +
       '<div class="foot"><div class="res" id="res"></div><button type="button" class="btn primary" id="saveBtn" data-act="fsave">Speichern</button></div></div>');
@@ -120,7 +120,7 @@
     var rg = s.querySelector('#augRange'); rg.value = d.reAug; rg.style.setProperty('--fill', (d.reAug / 240 * 100) + '%');
     s.querySelector('#augRe').textContent = d.reAug; s.querySelector('#augK').textContent = 240 - d.reAug;
     s.querySelector('#reA').value = String(d.reA); s.querySelector('#kA').value = String(d.kA);
-    s.querySelector('#exSec').hidden = solo;
+    s.querySelector('#exHR').textContent = solo ? 'Solist' : 'Re'; s.querySelector('#exHK').textContent = solo ? 'Gegner' : 'Kontra';
     ['R', 'K'].forEach(function (P) { ['f', 'd', 'k'].forEach(function (k) { s.querySelector('#ex' + P + k).textContent = d.ex[P][k]; }); });
     s.querySelector('#bock').checked = !!d.bock;
 
@@ -189,7 +189,7 @@
       Data.deleteGame(detailRow).then(function () { App.closeSheet(); return App.refresh(); }).catch(App.fail);
     }
     else if (draft && $sheet.contains(t)) {
-      if (a === 'fmode') { draft.mode = t.dataset.v; draft.re = (!editRow && st.phase === 'pflicht' && draft.mode === 'solo') ? [st.expected] : []; if (draft.mode === 'solo') draft.ex = D.blankEx(); }
+      if (a === 'fmode') { draft.mode = t.dataset.v; draft.re = (!editRow && st.phase === 'pflicht' && draft.mode === 'solo') ? [st.expected] : []; }
       else if (a === 'fchip') {
         var i = +t.dataset.i, max = draft.mode === 'solo' ? 1 : 2, at = draft.re.indexOf(i);
         if (at >= 0) draft.re.splice(at, 1); else { draft.re.push(i); while (draft.re.length > max) draft.re.shift(); }
