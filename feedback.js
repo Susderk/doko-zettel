@@ -90,7 +90,7 @@
     App.openSheet('<div class="col"><div class="bar"><button type="button" class="btn ghost" data-act="close">Abbrechen</button><h2>Feedback</h2></div><div class="body">' +
       '<section class="blk"><h3>Art</h3><div class="seg">' + CATS.map(function (c) { return '<button type="button" data-act="fbCat" data-v="' + c[0] + '" aria-pressed="' + (draft.cat === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div></section>' +
       '<label class="fld"><span>Kurz und knapp</span><input type="text" id="fbTitle" maxlength="80" autocomplete="off" placeholder="z. B. Bockspiel farbig markieren" value="' + esc(draft.title) + '"></label>' +
-      '<label class="fld"><span>Beschreibung (freiwillig)</span><textarea id="fbText" maxlength="1000" rows="5" placeholder="Was genau? Bei Fehlern: Was hast du gemacht, was ist passiert?">' + esc(draft.text) + '</textarea></label>' +
+      '<label class="fld"><span>Beschreibung (freiwillig)</span><textarea id="fbText" maxlength="500" rows="5" placeholder="Was genau? Bei Fehlern: Was hast du gemacht, was ist passiert?">' + esc(draft.text) + '</textarea></label>' +
       '<p class="hint">Du schreibst als ' + esc(App.nameOf(S.me)) + '. Alle in der Runde können den Beitrag sehen, kommentieren und mit Daumen hoch unterstützen.</p>' +
       '<button type="button" class="btn primary big" data-act="fbSave">Abschicken</button></div></div>');
   }
@@ -109,7 +109,7 @@
       var title = draft.title.trim();
       if (!title) { App.toast('Bitte kurz beschreiben, worum es geht.'); return; }
       t.disabled = true;
-      Data.addFeedback({ cat: draft.cat, title: title, text: draft.text.trim(), author: S.me }).then(function (p) {
+      Data.addFeedback({ cat: draft.cat, title: title, text: draft.text.trim().slice(0, 500), author: S.me }).then(function (p) {
         draft = null; App.closeSheet(); App.toast('Danke für dein Feedback!'); App.go('feedback/' + p.id);
       }).catch(function (e) { t.disabled = false; App.fail(e); });
     }
@@ -132,7 +132,7 @@
       var ta = document.getElementById('fbComment'), txt = ta.value.trim();
       if (!txt) { App.toast('Der Kommentar ist noch leer.'); return; }
       t.disabled = true;
-      Data.addComment(openId, { text: txt, author: S.me }).then(function () { ta.value = ''; return App.fbRefresh(); })
+      Data.addComment(openId, { text: txt.slice(0, 500), author: S.me }).then(function () { ta.value = ''; return App.fbRefresh(); })
         .catch(function (e) { t.disabled = false; App.fail(e); });
     }
     else if (a === 'fbDelC') {
